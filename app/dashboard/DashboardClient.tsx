@@ -1,5 +1,6 @@
 "use client"
 
+import NotificationPrompt from './NotificationPrompt'
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 
@@ -368,6 +369,7 @@ export default function DashboardClient({ vehicles, session }: { vehicles: Vehic
           </div>
         </div>
       )}
+      <NotificationPrompt />
     </div>
   )
 }
