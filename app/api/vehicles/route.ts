@@ -12,7 +12,7 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json()
-    const { name, make, model, year, licensePlate, oilChangeInterval } = body
+    const { name, make, model, year, licensePlate, currentMileage, oilChangeInterval, oilChangeIntervalMonths } = body
 
     if (!name) {
       return new NextResponse("Vehicle name is required", { status: 400 })
@@ -22,17 +22,19 @@ export async function POST(request: Request) {
       data: {
         userId: session.user.id,
         name,
-        make: make || null,
-        model: model || null,
-        year: year ? parseInt(year) : null,
-        licensePlate: licensePlate || null,
-        oilChangeInterval: oilChangeInterval ? parseInt(oilChangeInterval) : 3000,
+        make,
+        model,
+        year,
+        licensePlate,
+        currentMileage,
+        oilChangeInterval: oilChangeInterval || 3000,
+        oilChangeIntervalMonths: oilChangeIntervalMonths || 3,
       }
     })
 
     return NextResponse.json(vehicle)
   } catch (error) {
-    console.error("[VEHICLES_POST]", error)
+    console.error("[VEHICLE_POST]", error)
     return new NextResponse("Internal Error", { status: 500 })
   }
 }
@@ -61,7 +63,7 @@ export async function GET(request: Request) {
 
     return NextResponse.json(vehicles)
   } catch (error) {
-    console.error("[VEHICLES_GET]", error)
+    console.error("[VEHICLE_GET]", error)
     return new NextResponse("Internal Error", { status: 500 })
   }
 }

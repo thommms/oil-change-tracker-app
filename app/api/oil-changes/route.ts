@@ -15,13 +15,14 @@ export async function POST(request: Request) {
     const { vehicleId, mileageAtChange, dateOfChange, notes } = body
 
     if (!vehicleId || !mileageAtChange) {
-      return new NextResponse("Missing required fields", { status: 400 })
+      return new NextResponse("Vehicle ID and mileage are required", { status: 400 })
     }
 
+    // Get vehicle details
     const vehicle = await prisma.vehicle.findUnique({
       where: {
         id: vehicleId,
-        userId: session.user.id,
+        userId: session.user.id
       }
     })
 
@@ -29,21 +30,35 @@ export async function POST(request: Request) {
       return new NextResponse("Vehicle not found", { status: 404 })
     }
 
+    // Calculate next due mileage
     const nextChangeDueAt = parseInt(mileageAtChange) + vehicle.oilChangeInterval
 
+    // Calculate next due date
+    const changeDate = dateOfChange ? new Date(dateOfChange) : new Date()
+    const nextChangeDueDate = new Date(changeDate)
+    nextChangeDueDate.setMonth(nextChangeDueDate.getMonth() + vehicle.oilChangeIntervalMonths)
+
+    // Create oil change record
     const oilChange = await prisma.oilChange.create({
       data: {
         vehicleId,
         mileageAtChange: parseInt(mileageAtChange),
-        dateOfChange: dateOfChange ? new Date(dateOfChange) : new Date(),
+        dateOfChange: changeDate,
         nextChangeDueAt,
-        notes: notes || null,
+        nextChangeDueDate,
+        notes,
       }
+    })
+
+    // Update vehicle's current mileage
+    await prisma.vehicle.update({
+      where: { id: vehicleId },
+      data: { currentMileage: parseInt(mileageAtChange) }
     })
 
     return NextResponse.json(oilChange)
   } catch (error) {
-    console.error("[OIL_CHANGES_POST]", error)
+    console.error("[OIL_CHANGE_POST]", error)
     return new NextResponse("Internal Error", { status: 500 })
   }
 }

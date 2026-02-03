@@ -8,15 +8,21 @@ export async function sendOilChangeEmail({
   currentMileage,
   nextDueMileage,
   milesRemaining,
+  nextDueDate,
+  daysRemaining,
+  reason,
 }: {
   to: string
   vehicleName: string
   currentMileage: number
   nextDueMileage: number
   milesRemaining: number
+  nextDueDate?: Date
+  daysRemaining?: number
+  reason?: string
 }) {
   try {
-    const isOverdue = milesRemaining < 0
+    const isOverdue = milesRemaining < 0 || (daysRemaining !== undefined && daysRemaining < 0)
 
     const data = await resend.emails.send({
       from: 'Oil Change Tracker <onboarding@resend.dev>',
@@ -88,6 +94,13 @@ export async function sendOilChangeEmail({
                 padding-top: 20px;
                 border-top: 1px solid #e5e7eb;
               }
+              .reason {
+                background: #FEF3C7;
+                border-left: 4px solid #F59E0B;
+                padding: 12px;
+                border-radius: 4px;
+                margin: 15px 0;
+              }
             </style>
           </head>
           <body>
@@ -102,12 +115,12 @@ export async function sendOilChangeEmail({
 
             <div class="content">
               <p>Hi there,</p>
-              <p>
-                ${isOverdue 
-                  ? `Your <strong>${vehicleName}</strong> is <strong>${Math.abs(milesRemaining).toLocaleString()} miles overdue</strong> for an oil change!` 
-                  : `Your <strong>${vehicleName}</strong> needs an oil change in approximately <strong>${milesRemaining.toLocaleString()} miles</strong>.`
-                }
-              </p>
+              
+              ${reason ? `
+                <div class="reason">
+                  <strong>⏰ Service Due:</strong> ${reason}
+                </div>
+              ` : ''}
 
               <div class="stat">
                 <div class="stat-label">Current Mileage</div>
@@ -115,16 +128,30 @@ export async function sendOilChangeEmail({
               </div>
 
               <div class="stat">
-                <div class="stat-label">Next Service Due</div>
+                <div class="stat-label">Next Service Due (Mileage)</div>
                 <div class="stat-value">${nextDueMileage.toLocaleString()} miles</div>
+                <p style="margin: 5px 0 0 0; font-size: 14px; color: #6b7280;">
+                  ${milesRemaining > 0 
+                    ? `${milesRemaining.toLocaleString()} miles remaining` 
+                    : `${Math.abs(milesRemaining).toLocaleString()} miles overdue`}
+                </p>
               </div>
 
-              <div class="stat">
-                <div class="stat-label">${isOverdue ? 'Miles Overdue' : 'Miles Remaining'}</div>
-                <div class="stat-value" style="color: ${isOverdue ? '#DC2626' : '#F59E0B'};">
-                  ${Math.abs(milesRemaining).toLocaleString()} miles
+              ${nextDueDate && daysRemaining !== undefined ? `
+                <div class="stat">
+                  <div class="stat-label">Next Service Due (Date)</div>
+                  <div class="stat-value">${nextDueDate.toLocaleDateString('en-US', { 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric' 
+                  })}</div>
+                  <p style="margin: 5px 0 0 0; font-size: 14px; color: #6b7280;">
+                    ${daysRemaining > 0 
+                      ? `${daysRemaining} days remaining` 
+                      : `${Math.abs(daysRemaining)} days overdue`}
+                  </p>
                 </div>
-              </div>
+              ` : ''}
 
               <p>
                 ${isOverdue 

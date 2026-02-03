@@ -105,8 +105,7 @@ export default function EditVehicleClient({ vehicle }: { vehicle: Vehicle }) {
                 required
                 value={formData.name}
                 onChange={handleChange}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                placeholder="e.g., Kia K5 2021"
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-gray-700 focus:outline-none focus:ring-blue-500 focus:border-blue-500"                placeholder="e.g., Kia K5 2021"
               />
               <p className="mt-1 text-sm text-gray-500">
                 A friendly name to identify this vehicle
@@ -124,7 +123,7 @@ export default function EditVehicleClient({ vehicle }: { vehicle: Vehicle }) {
                   name="make"
                   value={formData.make}
                   onChange={handleChange}
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-gray-700 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                   placeholder="e.g., Kia"
                 />
               </div>
@@ -139,8 +138,7 @@ export default function EditVehicleClient({ vehicle }: { vehicle: Vehicle }) {
                   name="model"
                   value={formData.model}
                   onChange={handleChange}
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="e.g., K5"
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-gray-700 focus:outline-none focus:ring-blue-500 focus:border-blue-500"                  placeholder="e.g., K5"
                 />
               </div>
             </div>
@@ -156,8 +154,7 @@ export default function EditVehicleClient({ vehicle }: { vehicle: Vehicle }) {
                   name="year"
                   value={formData.year}
                   onChange={handleChange}
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="e.g., 2021"
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-gray-700 focus:outline-none focus:ring-blue-500 focus:border-blue-500"                  placeholder="e.g., 2021"
                   min="1900"
                   max="2030"
                 />
@@ -173,8 +170,7 @@ export default function EditVehicleClient({ vehicle }: { vehicle: Vehicle }) {
                   name="licensePlate"
                   value={formData.licensePlate}
                   onChange={handleChange}
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="e.g., ABC1234"
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-gray-700 focus:outline-none focus:ring-blue-500 focus:border-blue-500"                  placeholder="e.g., ABC1234"
                 />
               </div>
             </div>
@@ -189,8 +185,7 @@ export default function EditVehicleClient({ vehicle }: { vehicle: Vehicle }) {
                 name="oilChangeInterval"
                 value={formData.oilChangeInterval}
                 onChange={handleChange}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                placeholder="3000"
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-gray-700 focus:outline-none focus:ring-blue-500 focus:border-blue-500"                placeholder="3000"
                 min="1000"
                 max="15000"
               />

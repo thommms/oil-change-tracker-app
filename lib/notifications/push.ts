@@ -17,15 +17,21 @@ export async function sendPushNotification({
   currentMileage,
   nextDueMileage,
   milesRemaining,
+  nextDueDate,
+  daysRemaining,
+  reason,
 }: {
   token: string
   vehicleName: string
   currentMileage: number
   nextDueMileage: number
   milesRemaining: number
+  nextDueDate?: Date
+  daysRemaining?: number
+  reason?: string
 }) {
   try {
-    const isOverdue = milesRemaining < 0
+    const isOverdue = milesRemaining < 0 || (daysRemaining !== undefined && daysRemaining < 0)
 
     const message = {
       token,
@@ -33,15 +39,17 @@ export async function sendPushNotification({
         title: isOverdue 
           ? `🚨 ${vehicleName} - Oil Change Overdue!`
           : `⚠️ ${vehicleName} - Service Due Soon`,
-        body: isOverdue
+        body: reason || (isOverdue
           ? `${Math.abs(milesRemaining).toLocaleString()} miles overdue! Current: ${currentMileage.toLocaleString()} mi`
-          : `${milesRemaining.toLocaleString()} miles remaining. Next due: ${nextDueMileage.toLocaleString()} mi`,
+          : `${milesRemaining.toLocaleString()} miles remaining. Next due: ${nextDueMileage.toLocaleString()} mi`),
       },
       data: {
         vehicleName,
         currentMileage: currentMileage.toString(),
         nextDueMileage: nextDueMileage.toString(),
         milesRemaining: milesRemaining.toString(),
+        nextDueDate: nextDueDate?.toISOString() || '',
+        daysRemaining: daysRemaining?.toString() || '',
         type: isOverdue ? 'overdue' : 'upcoming',
         url: '/dashboard',
       },

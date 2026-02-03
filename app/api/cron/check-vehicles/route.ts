@@ -12,13 +12,8 @@ export async function GET(request: Request) {
 
     console.log('Running vehicle check cron job...')
 
-    // Get all vehicles with current mileage
+    // Get all vehicles with their latest oil change
     const vehicles = await prisma.vehicle.findMany({
-      where: {
-        currentMileage: {
-          not: null
-        }
-      },
       include: {
         user: true,
         oilChanges: {
@@ -38,6 +33,7 @@ export async function GET(request: Request) {
     })
 
     const results = []
+    const now = new Date()
 
     for (const vehicle of vehicles) {
       // Skip if no oil change records
@@ -47,11 +43,26 @@ export async function GET(request: Request) {
       }
 
       const lastOilChange = vehicle.oilChanges[0]
-      const milesUntilNext = lastOilChange.nextChangeDueAt - (vehicle.currentMileage || 0)
+      
+      // Check MILEAGE-based notification
+      let needsServiceByMileage = false
+      let milesUntilNext = null
+      
+      if (vehicle.currentMileage) {
+        milesUntilNext = lastOilChange.nextChangeDueAt - vehicle.currentMileage
+        needsServiceByMileage = milesUntilNext <= 200
+      }
 
-      // Only notify if within 200 miles or overdue
-      if (milesUntilNext > 200) {
-        console.log(`Skipping ${vehicle.name} - not due yet (${milesUntilNext} miles remaining)`)
+      // Check TIME-based notification
+      const nextDueDate = new Date(lastOilChange.nextChangeDueDate)
+      const daysUntilDue = Math.floor((nextDueDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+      const needsServiceByTime = daysUntilDue <= 14 // 2 weeks warning
+
+      // Skip if neither condition is met
+      if (!needsServiceByMileage && !needsServiceByTime) {
+        console.log(`Skipping ${vehicle.name} - not due yet`)
+        console.log(`  Mileage: ${milesUntilNext} miles remaining`)
+        console.log(`  Time: ${daysUntilDue} days remaining`)
         continue
       }
 
@@ -63,6 +74,23 @@ export async function GET(request: Request) {
 
       console.log(`Sending notification for ${vehicle.name}...`)
 
+      // Determine notification reason
+      const reasons = []
+      if (needsServiceByMileage) {
+        if (milesUntilNext! < 0) {
+          reasons.push(`${Math.abs(milesUntilNext!).toLocaleString()} miles overdue`)
+        } else {
+          reasons.push(`${milesUntilNext!.toLocaleString()} miles remaining`)
+        }
+      }
+      if (needsServiceByTime) {
+        if (daysUntilDue < 0) {
+          reasons.push(`${Math.abs(daysUntilDue)} days overdue`)
+        } else {
+          reasons.push(`${daysUntilDue} days remaining`)
+        }
+      }
+
       // Send email + push notification
       const notificationResult = await sendOilChangeNotification({
         email: vehicle.user.email,
@@ -70,7 +98,10 @@ export async function GET(request: Request) {
         vehicleName: vehicle.name,
         currentMileage: vehicle.currentMileage || 0,
         nextDueMileage: lastOilChange.nextChangeDueAt,
-        milesRemaining: milesUntilNext,
+        milesRemaining: milesUntilNext || 0,
+        nextDueDate: nextDueDate,
+        daysRemaining: daysUntilDue,
+        reason: reasons.join(' • '),
       })
 
       // Record notification
@@ -78,7 +109,7 @@ export async function GET(request: Request) {
         data: {
           vehicleId: vehicle.id,
           userId: vehicle.user.id,
-          notificationType: milesUntilNext < 0 ? 'overdue' : 'upcoming',
+          notificationType: (milesUntilNext !== null && milesUntilNext < 0) || daysUntilDue < 0 ? 'overdue' : 'upcoming',
           sentAt: new Date(),
           status: notificationResult.email.success || notificationResult.push.success ? 'sent' : 'failed',
         }
@@ -88,7 +119,7 @@ export async function GET(request: Request) {
         vehicle: vehicle.name,
         email: notificationResult.email.success ? 'sent' : 'failed',
         push: vehicle.user.fcmToken ? (notificationResult.push.success ? 'sent' : 'failed') : 'no_token',
-        milesRemaining: milesUntilNext,
+        reason: reasons.join(' • '),
       })
     }
 

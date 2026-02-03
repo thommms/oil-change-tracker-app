@@ -8,6 +8,9 @@ export async function sendOilChangeNotification({
   currentMileage,
   nextDueMileage,
   milesRemaining,
+  nextDueDate,
+  daysRemaining,
+  reason,
 }: {
   email: string
   fcmToken?: string | null
@@ -15,6 +18,9 @@ export async function sendOilChangeNotification({
   currentMileage: number
   nextDueMileage: number
   milesRemaining: number
+  nextDueDate?: Date
+  daysRemaining?: number
+  reason?: string
 }) {
   const results = {
     email: { success: false, data: null, error: null },
@@ -28,6 +34,9 @@ export async function sendOilChangeNotification({
     currentMileage,
     nextDueMileage,
     milesRemaining,
+    nextDueDate,
+    daysRemaining,
+    reason,
   })
   results.email = emailResult as any
 
@@ -39,6 +48,9 @@ export async function sendOilChangeNotification({
       currentMileage,
       nextDueMileage,
       milesRemaining,
+      nextDueDate,
+      daysRemaining,
+      reason,
     })
     results.push = pushResult as any
   }

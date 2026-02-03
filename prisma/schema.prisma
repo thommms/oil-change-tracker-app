@@ -18,8 +18,23 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   
-  vehicles      Vehicle[]
-  notifications Notification[]
+  vehicles           Vehicle[]
+  notifications      Notification[]
+  passwordResetTokens PasswordResetToken[]
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  used      Boolean  @default(false)
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@index([token])
 }
 
 model Vehicle {
@@ -30,8 +45,10 @@ model Vehicle {
   model             String?
   year              Int?
   licensePlate      String?
+  imageUrl          String?
   currentMileage    Int?
   oilChangeInterval Int      @default(3000)
+  oilChangeIntervalMonths Int @default(3)
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
   
@@ -49,6 +66,7 @@ model OilChange {
   mileageAtChange Int
   dateOfChange    DateTime @default(now())
   nextChangeDueAt Int
+  nextChangeDueDate DateTime
   notes           String?
   createdAt       DateTime @default(now())
   

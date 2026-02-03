@@ -25,7 +25,8 @@ export default async function DashboardPage() {
       mileageHistory: {
         orderBy: {
           createdAt: 'desc'
-        }
+        },
+        take: 10
       }
     }
   })
