@@ -5,29 +5,42 @@ import { prisma } from "@/lib/prisma"
 
 export async function GET(
   request: Request,
-  { params }: { params: Promise<{ vehicleId: string }> }
+  context: { params: Promise<{ vehicleId: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
 
-    if (!session) {
+    if (!session?.user?.email) {
       return new NextResponse("Unauthorized", { status: 401 })
     }
 
-    const resolvedParams = await params
+    const user = await prisma.user.findUnique({
+      where: { email: session.user.email },
+    })
 
-    const vehicle = await prisma.vehicle.findUnique({
+    if (!user) {
+      return new NextResponse("User not found", { status: 404 })
+    }
+
+    const params = await context.params
+
+    const vehicle = await prisma.vehicle.findFirst({
       where: {
-        id: resolvedParams.vehicleId,
-        userId: session.user.id,
+        id: params.vehicleId,
+        userId: user.id,
       },
       include: {
         oilChanges: {
           orderBy: {
-            dateOfChange: 'desc'
-          }
-        }
-      }
+            dateOfChange: "desc",
+          },
+        },
+        mileageHistory: {
+          orderBy: {
+            createdAt: "desc",
+          },
+        },
+      },
     })
 
     if (!vehicle) {
@@ -41,66 +54,98 @@ export async function GET(
   }
 }
 
-export async function DELETE(
+export async function PATCH(
   request: Request,
-  { params }: { params: Promise<{ vehicleId: string }> }
+  context: { params: Promise<{ vehicleId: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
 
-    if (!session) {
+    if (!session?.user?.email) {
       return new NextResponse("Unauthorized", { status: 401 })
     }
 
-    const resolvedParams = await params
-
-    await prisma.vehicle.delete({
-      where: {
-        id: resolvedParams.vehicleId,
-        userId: session.user.id,
-      }
+    const user = await prisma.user.findUnique({
+      where: { email: session.user.email },
     })
 
-    return new NextResponse(null, { status: 204 })
+    if (!user) {
+      return new NextResponse("User not found", { status: 404 })
+    }
+
+    const params = await context.params
+
+    const body = await request.json()
+    const {
+      name,
+      make,
+      model,
+      year,
+      licensePlate,
+      imageUrl,
+      oilChangeInterval,
+      oilChangeIntervalMonths,
+    } = body
+
+    const vehicle = await prisma.vehicle.updateMany({
+      where: {
+        id: params.vehicleId,
+        userId: user.id,
+      },
+      data: {
+        name,
+        make,
+        model,
+        year,
+        licensePlate,
+        imageUrl,
+        oilChangeInterval,
+        oilChangeIntervalMonths,
+      },
+    })
+
+    if (vehicle.count === 0) {
+      return new NextResponse("Vehicle not found", { status: 404 })
+    }
+
+    return NextResponse.json({ success: true })
   } catch (error) {
-    console.error("[VEHICLE_DELETE]", error)
+    console.error("[VEHICLE_PATCH]", error)
     return new NextResponse("Internal Error", { status: 500 })
   }
 }
 
-export async function PATCH(
+export async function DELETE(
   request: Request,
-  { params }: { params: Promise<{ vehicleId: string }> }
+  context: { params: Promise<{ vehicleId: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
 
-    if (!session) {
+    if (!session?.user?.email) {
       return new NextResponse("Unauthorized", { status: 401 })
     }
 
-    const resolvedParams = await params
-    const body = await request.json()
-    const { name, make, model, year, licensePlate, oilChangeInterval } = body
-
-    const vehicle = await prisma.vehicle.update({
-      where: {
-        id: resolvedParams.vehicleId,
-        userId: session.user.id,
-      },
-      data: {
-        name,
-        make: make || null,
-        model: model || null,
-        year: year ? parseInt(year) : null,
-        licensePlate: licensePlate || null,
-        oilChangeInterval: oilChangeInterval ? parseInt(oilChangeInterval) : 3000,
-      }
+    const user = await prisma.user.findUnique({
+      where: { email: session.user.email },
     })
 
-    return NextResponse.json(vehicle)
+    if (!user) {
+      return new NextResponse("User not found", { status: 404 })
+    }
+
+    const params = await context.params
+
+    await prisma.vehicle.deleteMany({
+      where: {
+        id: params.vehicleId,
+        userId: user.id,
+      },
+    })
+
+    return NextResponse.json({ success: true })
   } catch (error) {
-    console.error("[VEHICLE_PATCH]", error)
+    console.error("[VEHICLE_DELETE]", error)
     return new NextResponse("Internal Error", { status: 500 })
   }
 }

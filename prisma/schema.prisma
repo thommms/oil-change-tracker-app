@@ -18,6 +18,12 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   
+  // Notification Settings
+  emailNotificationsEnabled Boolean @default(true)
+  smsNotificationsEnabled   Boolean @default(false)
+  notificationMileageThreshold Int  @default(200)
+  notificationDaysThreshold    Int  @default(14)
+  
   vehicles           Vehicle[]
   notifications      Notification[]
   passwordResetTokens PasswordResetToken[]

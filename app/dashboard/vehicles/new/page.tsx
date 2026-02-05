@@ -2,11 +2,14 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import Image from "next/image"
 
 export default function NewVehiclePage() {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
+  const [isUploading, setIsUploading] = useState(false)
   const [error, setError] = useState("")
+  const [imagePreview, setImagePreview] = useState<string | null>(null)
 
   const [formData, setFormData] = useState({
     name: "",
@@ -14,10 +17,62 @@ export default function NewVehiclePage() {
     model: "",
     year: "",
     licensePlate: "",
+    imageUrl: "",
     currentMileage: "",
     oilChangeInterval: "3000",
     oilChangeIntervalMonths: "3",
   })
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      setError("Please select an image file")
+      return
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      setError("Image must be less than 5MB")
+      return
+    }
+
+    setIsUploading(true)
+    setError("")
+
+    try {
+      // Create preview
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string)
+      }
+      reader.readAsDataURL(file)
+
+      // Upload to server
+      const uploadFormData = new FormData()
+      uploadFormData.append("file", file)
+
+      const response = await fetch("/api/upload", {
+        method: "POST",
+        body: uploadFormData,
+      })
+
+      if (!response.ok) {
+        throw new Error("Upload failed")
+      }
+
+      const data = await response.json()
+      setFormData({ ...formData, imageUrl: data.url })
+    } catch (error) {
+      console.error("Upload error:", error)
+      setError("Failed to upload image. Please try again.")
+      setImagePreview(null)
+    } finally {
+      setIsUploading(false)
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -36,6 +91,7 @@ export default function NewVehiclePage() {
           model: formData.model || null,
           year: formData.year ? parseInt(formData.year) : null,
           licensePlate: formData.licensePlate || null,
+          imageUrl: formData.imageUrl || null,
           currentMileage: formData.currentMileage ? parseInt(formData.currentMileage) : null,
           oilChangeInterval: parseInt(formData.oilChangeInterval),
           oilChangeIntervalMonths: parseInt(formData.oilChangeIntervalMonths),
@@ -81,6 +137,49 @@ export default function NewVehiclePage() {
                 {error}
               </div>
             )}
+
+            {/* Image Upload */}
+            <div>
+              <label className="block text-sm font-medium text-gray-900 mb-2">
+                Vehicle Photo
+              </label>
+              <div className="flex items-center gap-4">
+                {imagePreview ? (
+                  <div className="relative w-32 h-32 rounded-lg overflow-hidden border-2 border-gray-200">
+                    <Image
+                      src={imagePreview}
+                      alt="Vehicle preview"
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
+                ) : (
+                  <div className="w-32 h-32 rounded-lg bg-gray-100 border-2 border-dashed border-gray-300 flex items-center justify-center">
+                    <svg className="w-12 h-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                )}
+
+                <div className="flex-1">
+                  <label className="cursor-pointer">
+                    <span className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium inline-block">
+                      {isUploading ? "Uploading..." : imagePreview ? "Change Photo" : "Upload Photo"}
+                    </span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      disabled={isUploading}
+                      className="hidden"
+                    />
+                  </label>
+                  <p className="mt-2 text-xs text-gray-500">
+                    JPG, PNG or GIF. Max 5MB.
+                  </p>
+                </div>
+              </div>
+            </div>
 
             <div>
               <label htmlFor="name" className="block text-sm font-medium text-gray-900 mb-2">
@@ -238,7 +337,7 @@ export default function NewVehiclePage() {
               </button>
               <button
                 type="submit"
-                disabled={isLoading}
+                disabled={isLoading || isUploading}
                 className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isLoading ? "Creating..." : "Create Vehicle"}

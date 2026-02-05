@@ -14,9 +14,11 @@
     "@tailwindcss/postcss": "^4.1.18",
     "autoprefixer": "^10.4.23",
     "bcryptjs": "^2.4.3",
+    "cloudinary": "^2.9.0",
     "firebase-admin": "^13.0.1",
     "next": "15.1.5",
     "next-auth": "^4.24.7",
+    "next-cloudinary": "^6.17.5",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "resend": "^4.0.1"
